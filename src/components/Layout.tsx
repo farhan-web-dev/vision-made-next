@@ -1,6 +1,14 @@
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { Upload, CheckCircle, ShoppingCart, LayoutDashboard, Vote, Wallet, Search } from "lucide-react";
+import {
+  Upload,
+  CheckCircle,
+  ShoppingCart,
+  LayoutDashboard,
+  Vote,
+  Wallet,
+  Search,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
@@ -26,10 +34,10 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Desktop Header */}
       <header className="hidden md:flex items-center justify-between px-6 py-4 border-b bg-card">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
+          {/* <Link to="/" className="flex items-center gap-2">
             <div className="text-2xl font-bold text-primary">✱ FanForge</div>
             <span className="text-sm text-muted-foreground">Sports Analytics DAO</span>
-          </Link>
+          </Link> */}
           <nav className="flex items-center gap-1">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path}>
