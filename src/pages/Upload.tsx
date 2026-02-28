@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload as UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,16 +6,65 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useWallet } from "@/contexts/WalletContext";
+import { useCreateReport } from "@/hooks/use-create-report";
 
 const Upload = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { address, isConnected, connectWallet } = useWallet();
+  const { mutate: createReport, isPending } = useCreateReport();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Report submitted successfully!");
-    setTitle("");
-    setDescription("");
+
+    if (!isConnected || !address) {
+      toast.error("Please connect your wallet first");
+      await connectWallet();
+      return;
+    }
+
+    if (!file) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    if (!title || !description) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    createReport(
+      {
+        creator: address,
+        title,
+        description,
+        file,
+      },
+      {
+        onSuccess: () => {
+          // Reset form after successful submission
+          setTitle("");
+          setDescription("");
+          setFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
+        },
+      }
+    );
   };
 
   return (
@@ -54,19 +103,48 @@ const Upload = () => {
 
           <div className="space-y-2">
             <Label>Upload File</Label>
-            <div className="border-2 border-dashed rounded-lg p-12 text-center hover:border-primary transition-colors cursor-pointer">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.txt"
+            />
+            <div
+              onClick={handleFileClick}
+              className="border-2 border-dashed rounded-lg p-12 text-center hover:border-primary transition-colors cursor-pointer"
+            >
               <UploadIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                Drag and drop your report here, or click to browse
-              </p>
+              {file ? (
+                <p className="text-sm text-primary mb-2 font-medium">
+                  {file.name}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mb-2">
+                  Drag and drop your report here, or click to browse
+                </p>
+              )}
               <Button type="button" variant="outline" size="sm">
-                Choose File
+                {file ? "Change File" : "Choose File"}
               </Button>
             </div>
           </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            Submit Report
+          {!isConnected && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                Please connect your wallet to upload a report.
+              </p>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={isPending || !isConnected}
+          >
+            {isPending ? "Submitting..." : "Submit Report"}
           </Button>
         </form>
       </Card>

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useWallet } from "@/contexts/WalletContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { address, isConnected, connectWallet, disconnectWallet } = useWallet();
 
   const navItems = [
     { path: "/", icon: Upload, label: "Upload" },
@@ -28,6 +30,10 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -57,20 +63,43 @@ const Layout = ({ children }: LayoutProps) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search reports..." className="pl-10" />
           </div>
-          <Button className="gap-2">
-            <Wallet className="h-4 w-4" />
-            Connect Wallet
-          </Button>
+          {isConnected && address ? (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={disconnectWallet}
+            >
+              <Wallet className="h-4 w-4" />
+              {formatAddress(address)}
+            </Button>
+          ) : (
+            <Button className="gap-2" onClick={connectWallet}>
+              <Wallet className="h-4 w-4" />
+              Connect Wallet
+            </Button>
+          )}
         </div>
       </header>
 
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card">
         <div className="text-lg font-bold text-primary">✱ FanForge</div>
-        <Button size="sm" className="gap-2">
-          <Wallet className="h-4 w-4" />
-          Connect
-        </Button>
+        {isConnected && address ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={disconnectWallet}
+          >
+            <Wallet className="h-4 w-4" />
+            {formatAddress(address)}
+          </Button>
+        ) : (
+          <Button size="sm" className="gap-2" onClick={connectWallet}>
+            <Wallet className="h-4 w-4" />
+            Connect
+          </Button>
+        )}
       </header>
 
       {/* Main Content */}
