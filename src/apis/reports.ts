@@ -6,6 +6,7 @@ export interface CreateReportRequest {
   title: string;
   description: string;
   file: File;
+  price: string | number;
 }
 
 export interface CreateReportResponse {
@@ -21,6 +22,7 @@ export const createReport = async (
   formData.append("creator", data.creator);
   formData.append("title", data.title);
   formData.append("description", data.description);
+  formData.append("price", String(data.price));
   formData.append("file", data.file);
 
   const response = await fetch(`${API_BASE_URL}/reports/createReport`, {

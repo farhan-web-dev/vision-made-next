@@ -12,6 +12,7 @@ import { useCreateReport } from "@/hooks/use-create-report";
 const Upload = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { address, isConnected, connectWallet } = useWallet();
@@ -51,6 +52,7 @@ const Upload = () => {
         creator: address,
         title,
         description,
+        price,
         file,
       },
       {
@@ -58,6 +60,7 @@ const Upload = () => {
           // Reset form after successful submission
           setTitle("");
           setDescription("");
+          setPrice("");
           setFile(null);
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
@@ -97,6 +100,20 @@ const Upload = () => {
               rows={6}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="price">Price ($FANSTOKEN)</Label>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g., 50"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
               required
             />
           </div>

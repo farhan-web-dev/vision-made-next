@@ -5,7 +5,7 @@ export interface Proposal {
   id: number;
   title: string;
   description: string;
-  status: "active" | "pending" | "completed" | "rejected";
+  status: "active" | "pending" | "completed" | "rejected" | "Active" | "Pending" | "Completed" | "Rejected" | "EXECUTED" | string;
   votesFor: number;
   votesAgainst: number;
   quorum?: number;

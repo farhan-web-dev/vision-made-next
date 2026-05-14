@@ -1,11 +1,11 @@
 import { Badge } from "./ui/badge";
 
 interface StatusBadgeProps {
-  status: "validated" | "pending" | "rejected" | "active";
+  status: "validated" | "pending" | "rejected" | "active" | "executed" | "EXECUTED" | string;
 }
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
-  const config = {
+  const config: Record<string, { label: string; className: string }> = {
     validated: {
       label: "Validated",
       className: "bg-success text-success-foreground hover:bg-success",
@@ -22,9 +22,19 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       label: "Active",
       className: "bg-success text-success-foreground hover:bg-success",
     },
+    executed: {
+      label: "Executed",
+      className: "bg-primary text-primary-foreground hover:bg-primary",
+    },
   };
 
-  const { label, className } = config[status];
+  const normalizedStatus = (status || "").toLowerCase();
+  const badgeConfig = config[normalizedStatus] || {
+    label: status || "Unknown",
+    className: "bg-secondary text-secondary-foreground hover:bg-secondary",
+  };
+
+  const { label, className } = badgeConfig;
 
   return <Badge className={className}>{label}</Badge>;
 };

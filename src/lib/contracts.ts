@@ -1,5 +1,6 @@
 import governorContractAbi from "../../abis/governerContract.json";
 import fansTokenAbi from "../../abis/FanzToken.json";
+import marketplaceAbi from "../../abis/Marketplace.json";
 
 // Get contract addresses from environment variables
 const governorAddress =
@@ -8,6 +9,10 @@ const governorAddress =
 
 const fzTokenAddress =
   import.meta.env.VITE_FZ_TOKEN_ADDRESS ||
+  "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default Sepolia address from config.env
+
+const marketplaceAddress =
+  import.meta.env.VITE_MARKETPLACE_ADDRESS ||
   "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default Sepolia address from config.env
 
 // Validate that addresses are not zero address
@@ -31,5 +36,9 @@ export const contracts = {
   fansToken: {
     address: fzTokenAddress as `0x${string}`,
     abi: fansTokenAbi.abi,
+  },
+  marketplace: {
+    address: marketplaceAddress as `0x${string}`,
+    abi: marketplaceAbi.abi,
   },
 };

@@ -78,7 +78,7 @@ function ProposalCard({
   voteMutation,
   handleVote,
 }: {
-  proposal: Proposal & { proposalId?: string | number };
+  proposal: Proposal & { proposalId?: string | number; price?: string | number; reportId?: { price?: string | number } };
   proposalId: string | number;
   voteMutation: ReturnType<typeof useVoteProposal>;
   handleVote: (proposalId: string | number, vote: number) => void;
@@ -99,6 +99,11 @@ function ProposalCard({
 
         <div className="flex-1">
           <h2 className="text-xl font-semibold">{p.title}</h2>
+          {(p.price || p.reportId?.price) && (
+            <div className="text-sm font-semibold text-primary mt-1">
+              Price: {p.price || p.reportId?.price} $FANSTOKEN
+            </div>
+          )}
           <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
 
           <div className="flex items-center gap-2 mt-2">
