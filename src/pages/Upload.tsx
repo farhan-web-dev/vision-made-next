@@ -20,7 +20,20 @@ const Upload = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      const isAllowed = selectedFile.type === "application/pdf" || 
+                        selectedFile.type === "text/plain" ||
+                        selectedFile.name.toLowerCase().endsWith(".pdf") ||
+                        selectedFile.name.toLowerCase().endsWith(".txt");
+      if (!isAllowed) {
+        toast.error("Please upload a PDF or TXT file only. The AI fact-checking engine is optimized for these formats.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        setFile(null);
+        return;
+      }
+      setFile(selectedFile);
     }
   };
 
@@ -125,7 +138,7 @@ const Upload = () => {
               ref={fileInputRef}
               onChange={handleFileSelect}
               className="hidden"
-              accept=".pdf,.doc,.docx,.txt"
+              accept=".pdf,.txt"
             />
             <div
               onClick={handleFileClick}
@@ -137,9 +150,14 @@ const Upload = () => {
                   {file.name}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground mb-2">
-                  Drag and drop your report here, or click to browse
-                </p>
+                <div className="space-y-1 mb-2">
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop your report here, or click to browse
+                  </p>
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+                    Only PDF and TXT files are supported for AI Fact-Checking verification
+                  </p>
+                </div>
               )}
               <Button type="button" variant="outline" size="sm">
                 {file ? "Change File" : "Choose File"}

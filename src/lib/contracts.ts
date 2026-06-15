@@ -1,4 +1,4 @@
-import governorContractAbi from "../../abis/governerContract.json";
+import governorContractAbi from "../../abis/GovernerContract.json";
 import fansTokenAbi from "../../abis/FanzToken.json";
 import marketplaceAbi from "../../abis/Marketplace.json";
 
