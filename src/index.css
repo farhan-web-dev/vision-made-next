@@ -8,89 +8,94 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 13% 13%;
+    /* Set default to dark mode variables for a cyber feel */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 208 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* Neon Cyan */
+    --primary: 190 100% 50%;
+    --primary-foreground: 240 10% 4%;
 
-    --secondary: 210 17% 95%;
-    --secondary-foreground: 220 13% 13%;
+    /* Translucent Secondary */
+    --secondary: 240 10% 12%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 17% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 208 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Neon Purple */
+    --accent: 270 100% 60%;
+    --accent-foreground: 0 0% 98%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 70% 50%;
+    --success-foreground: 240 10% 4%;
 
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 45 93% 50%;
+    --warning-foreground: 240 10% 4%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 208 100% 50%;
+    --border: 240 10% 16%;
+    --input: 240 10% 16%;
+    --ring: 190 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --chart-1: 208 100% 50%;
-    --chart-2: 142 71% 45%;
-    --chart-3: 280 85% 60%;
-    --chart-4: 45 93% 47%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 190 100% 50%;
+    --chart-2: 270 100% 60%;
+    --chart-3: 142 70% 50%;
+    --chart-4: 45 93% 50%;
+    --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 220 13% 13%;
+    /* Keep identical so dark mode toggle does not break the premium feel */
+    --background: 240 10% 4%;
     --foreground: 0 0% 98%;
 
-    --card: 220 13% 16%;
+    --card: 240 10% 6%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 13% 16%;
+    --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 208 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 190 100% 50%;
+    --primary-foreground: 240 10% 4%;
 
-    --secondary: 220 13% 20%;
+    --secondary: 240 10% 12%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 220 13% 20%;
-    --muted-foreground: 220 9% 65%;
+    --muted: 240 10% 12%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 208 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 270 100% 60%;
+    --accent-foreground: 0 0% 98%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 70% 50%;
+    --success-foreground: 240 10% 4%;
 
-    --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 45 93% 50%;
+    --warning-foreground: 240 10% 4%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 25%;
-    --input: 220 13% 25%;
-    --ring: 208 100% 50%;
+    --border: 240 10% 16%;
+    --input: 240 10% 16%;
+    --ring: 190 100% 50%;
 
-    --chart-1: 208 100% 50%;
-    --chart-2: 142 71% 45%;
-    --chart-3: 280 85% 60%;
-    --chart-4: 45 93% 47%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 190 100% 50%;
+    --chart-2: 270 100% 60%;
+    --chart-3: 142 70% 50%;
+    --chart-4: 45 93% 50%;
+    --chart-5: 0 84% 60%;
   }
 }
 

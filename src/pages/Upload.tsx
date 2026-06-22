@@ -127,6 +127,7 @@ const Upload = () => {
               placeholder="e.g., 50"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              onWheel={(e) => (e.target as HTMLInputElement).blur()}
               required
             />
           </div>

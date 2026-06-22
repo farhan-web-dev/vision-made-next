@@ -36,9 +36,12 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="dark min-h-screen bg-background flex flex-col relative text-foreground">
+      {/* Background Mesh */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background -z-10 pointer-events-none" />
+
       {/* Desktop Header */}
-      <header className="hidden md:flex items-center justify-between px-6 py-4 border-b bg-card">
+      <header className="hidden md:flex items-center justify-between px-6 py-4 border-b border-border/40 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="flex items-center gap-8">
           {/* <Link to="/" className="flex items-center gap-2">
             <div className="text-2xl font-bold text-primary">✱ FanForge</div>
@@ -82,7 +85,7 @@ const Layout = ({ children }: LayoutProps) => {
       </header>
 
       {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-between px-4 py-3 border-b bg-card">
+      <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="text-lg font-bold text-primary">✱ FanForge</div>
         {isConnected && address ? (
           <Button
@@ -106,7 +109,7 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex-1 pb-20 md:pb-6">{children}</main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/60 backdrop-blur-xl border-t border-border/40 z-50">
         <div className="flex items-center justify-around py-2">
           {navItems.map((item) => (
             <Link key={item.path} to={item.path} className="flex-1">

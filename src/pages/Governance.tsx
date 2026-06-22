@@ -1,4 +1,4 @@
-import { Clock, TrendingUp, TrendingDown, UserCheck } from "lucide-react";
+import { Clock, TrendingUp, TrendingDown, UserCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,42 +8,33 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useDelegationStatus } from "@/hooks/use-delegation-status";
 import { useDelegateVote } from "@/hooks/use-delegate-vote";
-
-const proposals = [
-  {
-    id: 1,
-    title: "Integrate FanForge with Chainlink Oracles",
-    description:
-      "Proposal to integrate Chainlink Sports data oracles for enhanced report validation accuracy and...",
-    status: "active" as const,
-    votesFor: 72000,
-    votesAgainst: 18000,
-    quorum: 80,
-    timeLeft: "2 days left",
-  },
-  {
-    id: 2,
-    title: "Increase $FANSTOKEN Staking Rewards",
-    description:
-      "Adjust the staking reward parameters to incentivize long-term token holding and governance participation.",
-    status: "active" as const,
-    votesFor: 45000,
-    votesAgainst: 15000,
-    quorum: 60,
-    timeLeft: "5 days left",
-  },
-];
+import { useProposals } from "@/hooks/use-proposals";
+import { useState, useMemo } from "react";
 
 const Governance = () => {
   const { address, isConnected, connectWallet } = useWallet();
   const { data: tokenBalance, isLoading: isLoadingBalance } = useTokenBalance();
-  const { data: delegationStatus, isLoading: isLoadingDelegation } =
-    useDelegationStatus();
+  const { data: delegationStatus, isLoading: isLoadingDelegation } = useDelegationStatus();
   const delegateMutation = useDelegateVote();
+  const { data: proposalsResponse, isLoading: isLoadingProposals } = useProposals();
+  const [filter, setFilter] = useState<"all" | "created" | "bought">("all");
 
-  const handleVote = (proposalTitle: string, vote: "approve" | "reject") => {
-    toast.success(`Voted to ${vote} proposal`);
-  };
+  const proposals = Array.isArray(proposalsResponse) ? proposalsResponse : proposalsResponse?.data || [];
+
+  const filteredProposals = useMemo(() => {
+    return proposals.filter((p: any) => {
+      const creator = p.reportId?.creator || p.author || "";
+      const isCreator = address && creator.toLowerCase() === address.toLowerCase();
+      // Since there is no off-chain indexer for on-chain NFT purchases yet, 
+      // we check for a hypothetical buyer field. If missing, it defaults to false.
+      const isBuyer = address && p.reportId?.buyer?.toLowerCase() === address.toLowerCase();
+
+      if (filter === "all") return true;
+      if (filter === "created") return isCreator;
+      if (filter === "bought") return isBuyer;
+      return true;
+    });
+  }, [proposals, filter, address]);
 
   const handleDelegate = () => {
     if (!isConnected) {
@@ -67,23 +58,22 @@ const Governance = () => {
   };
 
   const isDelegated = delegationStatus?.isDelegated ?? false;
-  const showDelegateButton =
-    isConnected && !isDelegated && !isLoadingDelegation;
+  const showDelegateButton = isConnected && !isDelegated && !isLoadingDelegation;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Governance</h1>
         <p className="text-muted-foreground">
-          Participate in community governance by voting on proposals
+          Track DAO decisions and manage your voting power
         </p>
       </div>
 
-      <div className="mb-8 p-6 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mb-8 p-6 bg-card/40 backdrop-blur-md rounded-lg border border-border/50 shadow-[0_0_15px_rgba(0,255,255,0.05)] transition-all hover:shadow-[0_0_20px_rgba(0,255,255,0.1)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div>
             <h2 className="text-2xl font-bold mb-2">Available Voting Power</h2>
-            <div className="text-4xl font-bold text-primary">
+            <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               {isLoadingBalance
                 ? "Loading..."
                 : `${formatBalance(tokenBalance)} $FANSTOKEN`}
@@ -120,65 +110,65 @@ const Governance = () => {
       </div>
 
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Active Proposals</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold">Proposal History</h2>
+          <div className="flex gap-2">
+            <Button size="sm" variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")}>All</Button>
+            <Button size="sm" variant={filter === "created" ? "default" : "outline"} onClick={() => setFilter("created")}>Created by Me</Button>
+            <Button size="sm" variant={filter === "bought" ? "default" : "outline"} onClick={() => setFilter("bought")}>Purchased</Button>
+          </div>
+        </div>
 
-        {proposals.map((proposal) => (
-          <Card key={proposal.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="mb-2">{proposal.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {proposal.description}
-                  </p>
-                </div>
-                <StatusBadge status={proposal.status} />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2 text-sm">
-                  <div className="flex items-center gap-2 text-success">
-                    <TrendingUp className="h-4 w-4" />
-                    <span>Yes ({proposal.votesFor.toLocaleString()})</span>
+        {isLoadingProposals ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredProposals.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">No proposals found matching this filter.</p>
+        ) : (
+          filteredProposals.map((p: any) => {
+            const proposalId = p.id ?? p.proposalId ?? Math.random();
+            const title = p.reportId?.title || p.title || `Proposal #${p.proposalId}`;
+            const description = p.description || "No description provided.";
+            const votesFor = p.votesFor || 0;
+            const votesAgainst = p.votesAgainst || 0;
+            const totalVotes = votesFor + votesAgainst;
+            
+            return (
+              <Card key={proposalId} className="border-border/50 bg-card/40 backdrop-blur-md transition-all hover:shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:-translate-y-1">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle className="mb-2">{title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {description}
+                      </p>
+                    </div>
+                    <StatusBadge status={p.status || "Unknown"} />
                   </div>
-                  <div className="flex items-center gap-2 text-destructive">
-                    <TrendingDown className="h-4 w-4" />
-                    <span>No ({proposal.votesAgainst.toLocaleString()})</span>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2 text-sm">
+                      <div className="flex items-center gap-2 text-success">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>Yes (Voters): {votesFor.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-destructive">
+                        <TrendingDown className="h-4 w-4" />
+                        <span>No (Voters): {votesAgainst.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <Progress value={totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0} className="h-2" />
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      Total Voters: {totalVotes.toLocaleString()}
+                    </div>
                   </div>
-                </div>
-                <Progress value={proposal.quorum} className="h-2" />
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Votes:{" "}
-                  {(proposal.votesFor + proposal.votesAgainst).toLocaleString()}{" "}
-                  ({proposal.votesFor.toLocaleString()} Yes,{" "}
-                  {proposal.votesAgainst.toLocaleString()} No)
-                </div>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  Quorum: Reached • {proposal.quorum}%
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>Time Left: {proposal.timeLeft}</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleVote(proposal.title, "reject")}
-                  >
-                    Reject
-                  </Button>
-                  <Button onClick={() => handleVote(proposal.title, "approve")}>
-                    Approve
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
     </div>
   );

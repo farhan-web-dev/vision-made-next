@@ -10,12 +10,18 @@ import { useWallet } from "@/contexts/WalletContext";
 import { ethers } from "ethers";
 import { contracts } from "@/lib/contracts";
 
-const cricketImages = ["🏏", "🏟️", "🏆", "🏏"];
+const reportImages = [
+  "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1508344928928-7165b67de128?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=800&q=80"
+];
 
 const Marketplace = () => {
   const { isConnected, connectWallet, checkNetwork, switchToSepolia } = useWallet();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isBuying, setIsBuying] = useState(false);
+  const [buyingId, setBuyingId] = useState<number | string | null>(null);
   const { data: proposalsResponse, isLoading } = useProposals();
 
   const proposals = Array.isArray(proposalsResponse)
@@ -28,11 +34,12 @@ const Marketplace = () => {
       .filter((p: any) => p.status === "EXECUTED" || (p.status || "").toLowerCase() === "executed")
       .map((p: any) => ({
         id: p.id ?? p.proposalId ?? Math.random(),
-        title: p.title || `Report #${p.proposalId}`,
-        author: p.author || "Community Member",
+        title: p.reportId?.title || p.title || `Report #${p.proposalId}`,
+        author: p.reportId?.creator || p.author || "Community Member",
         price: p.price || p.reportId?.price || 0,
-        image: cricketImages[Math.floor(Math.random() * cricketImages.length)],
+        image: reportImages[Math.floor(Math.random() * reportImages.length)],
         status: p.status,
+        ipfsHash: p.reportId?.fileIpfsHash,
       }));
   }, [proposals]);
 
@@ -40,7 +47,7 @@ const Marketplace = () => {
     r.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleBuy = async (reportId: number, reportTitle: string, reportPrice: number) => {
+  const handleBuy = async (reportId: number, reportTitle: string, reportPrice: number, ipfsHash: string) => {
     if (!isConnected) {
       toast.error("Please connect your wallet to purchase");
       await connectWallet();
@@ -53,7 +60,7 @@ const Marketplace = () => {
     }
 
     try {
-      setIsBuying(true);
+      setBuyingId(reportId);
       const isSepolia = await checkNetwork();
       if (!isSepolia) {
         toast.info("Switching to Sepolia network...");
@@ -86,8 +93,34 @@ const Marketplace = () => {
         signer
       );
 
+      toast.info(`Resolving report on-chain...`);
+      let actualReportId = 0n;
+      
+      try {
+        const nextReportId = await marketplaceContract.nextReportId();
+        for (let i = 1n; i <= nextReportId; i++) {
+          try {
+            const uri = await marketplaceContract.tokenURI(i);
+            if (uri === ipfsHash) {
+              actualReportId = i;
+              break;
+            }
+          } catch (e) {
+            // Ignore if token doesn't exist
+          }
+        }
+      } catch (err) {
+        console.error("Failed to query marketplace contract:", err);
+      }
+
+      if (actualReportId === 0n) {
+        toast.error("Report not found on the marketplace contract. Ensure the report is listed.");
+        setBuyingId(null);
+        return;
+      }
+
       toast.info(`Purchasing report: ${reportTitle}...`);
-      const buyTx = await marketplaceContract.buyReport(BigInt(reportId));
+      const buyTx = await marketplaceContract.buyReport(actualReportId);
       await buyTx.wait();
 
       toast.success(`Successfully purchased: ${reportTitle}`);
@@ -99,7 +132,7 @@ const Marketplace = () => {
         toast.error(error?.reason || error?.message || "Failed to buy report");
       }
     } finally {
-      setIsBuying(false);
+      setBuyingId(null);
     }
   };
 
@@ -131,16 +164,17 @@ const Marketplace = () => {
         </div>
       ) : filteredReports.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          No executed reports found.
+          No reports found.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredReports.map((report: any) => (
-          <Card key={report.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-6xl">
-              {report.image}
+          <Card key={report.id} className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-md transition-all hover:shadow-[0_0_20px_rgba(0,255,255,0.15)] hover:-translate-y-2 group">
+            <div className="aspect-video bg-muted overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
+              <img src={report.image} alt="Report Cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
             </div>
-            <div className="p-4">
+            <div className="p-4 relative z-20">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <h3 className="font-bold mb-1">{report.title}</h3>
@@ -148,6 +182,29 @@ const Marketplace = () => {
                 </div>
                 <StatusBadge status={report.status} />
               </div>
+              
+              {report.ipfsHash && (() => {
+                const cleanHash = report.ipfsHash.replace("ipfs://", "");
+                return (
+                  <div className="mt-2 mb-2">
+                    <p className="text-xs font-semibold text-muted-foreground mb-1">Document Snippet:</p>
+                    <iframe 
+                      src={`https://ipfs.io/ipfs/${cleanHash}`} 
+                      className="w-full h-24 border rounded-md" 
+                      title="Uploaded Document"
+                    />
+                    <a 
+                      href={`https://ipfs.io/ipfs/${cleanHash}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-xs text-blue-500 hover:underline mt-1 inline-block"
+                    >
+                      Open full document ↗
+                    </a>
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center justify-between mt-4">
                 <div>
                   <div className="flex items-center gap-1 text-primary font-bold">
@@ -157,10 +214,10 @@ const Marketplace = () => {
                   <p className="text-xs text-muted-foreground">FANSTOKEN</p>
                 </div>
                 <Button 
-                  onClick={() => handleBuy(report.id, report.title, report.price)}
-                  disabled={isBuying}
+                  onClick={() => handleBuy(report.id, report.title, report.price, report.ipfsHash)}
+                  disabled={buyingId !== null}
                 >
-                  {isBuying ? (
+                  {buyingId === report.id ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing

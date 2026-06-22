@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useWallet } from "@/contexts/WalletContext";
+import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useProposals } from "@/hooks/use-proposals";
+import { useMemo } from "react";
 
 const tokenData = [
   { month: "Jan", tokens: 1400 },
@@ -14,6 +18,48 @@ const tokenData = [
 ];
 
 const Dashboard = () => {
+  const { address, isConnected } = useWallet();
+  const { data: tokenBalance } = useTokenBalance();
+  const { data: proposalsResponse } = useProposals();
+
+  const proposals = Array.isArray(proposalsResponse)
+    ? proposalsResponse
+    : proposalsResponse?.data || [];
+
+  const formatBalance = (balance: string | null | undefined) => {
+    if (!balance) return "0.00";
+    return parseFloat(balance).toLocaleString(undefined, {
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const formattedBalance = formatBalance(tokenBalance);
+
+  const stats = useMemo(() => {
+    let uploaded = 0;
+    let earned = 0;
+    let platformValidated = 0;
+
+    proposals.forEach((p: any) => {
+      const creator = p.reportId?.creator || p.author || "";
+      const isCreator = address && creator.toLowerCase() === address.toLowerCase();
+
+      if (isCreator) {
+        uploaded++;
+        if ((p.status || "").toLowerCase() === "executed") {
+          const price = p.price || p.reportId?.price || 0;
+          earned += parseFloat(price);
+        }
+      }
+
+      if ((p.status || "").toLowerCase() === "executed") {
+        platformValidated++;
+      }
+    });
+
+    return { uploaded, earned, platformValidated };
+  }, [proposals, address]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -22,7 +68,7 @@ const Dashboard = () => {
       </div>
 
       {/* Balance Card */}
-      <Card className="mb-8 bg-gradient-to-br from-primary to-accent text-white">
+      <Card className="mb-8 bg-gradient-to-br from-primary/80 to-accent/80 text-white border-white/10 shadow-[0_0_30px_rgba(0,255,255,0.2)] backdrop-blur-xl transition-all hover:scale-[1.02]">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -35,20 +81,21 @@ const Dashboard = () => {
             </Button>
           </div>
           <div>
-            <div className="text-4xl font-bold mb-1">25,300.75 $FANSTOKEN</div>
-            <div className="text-sm opacity-75">12,650.38 USD</div>
+            <div className="text-4xl font-bold mb-1">
+              {isConnected ? `${formattedBalance} $FANSTOKEN` : "Connect Wallet"}
+            </div>
+            <div className="text-sm opacity-75">
+              {isConnected ? "Real-time balance" : "to view your balance"}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Contributions */}
-      <Card className="mb-8">
+      <Card className="mb-8 border-border/50 bg-card/40 backdrop-blur-md transition-all hover:shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:-translate-y-1">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Your Contributions</CardTitle>
-            <Button variant="link" className="gap-1">
-              View Details <ArrowUpRight className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -58,39 +105,39 @@ const Dashboard = () => {
                 <UploadIcon className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Reports Uploaded</span>
               </div>
-              <span className="text-sm font-bold">7 / 10</span>
+              <span className="text-sm font-bold">{stats.uploaded} Total</span>
             </div>
-            <Progress value={70} className="h-2" />
+            <Progress value={Math.min(100, stats.uploaded * 10)} className="h-2" />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-success" />
-                <span className="text-sm font-medium">Reports Validated</span>
+                <span className="text-sm font-medium">Platform Validated Reports</span>
               </div>
-              <span className="text-sm font-bold">15 / 20</span>
+              <span className="text-sm font-bold">{stats.platformValidated} Total</span>
             </div>
-            <Progress value={75} className="h-2" />
+            <Progress value={Math.min(100, stats.platformValidated * 5)} className="h-2" />
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-warning" />
-                <span className="text-sm font-medium">Tokens Earned</span>
+                <span className="text-sm font-medium">Tokens Earned (from reports)</span>
               </div>
-              <span className="text-sm font-bold">1,500 / 2,000</span>
+              <span className="text-sm font-bold">{stats.earned.toLocaleString()} $FANSTOKEN</span>
             </div>
-            <Progress value={75} className="h-2" />
+            <Progress value={Math.min(100, (stats.earned / 5000) * 100)} className="h-2" />
           </div>
         </CardContent>
       </Card>
 
       {/* Token Transactions Chart */}
-      <Card>
+      <Card className="border-border/50 bg-card/40 backdrop-blur-md transition-all hover:shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:-translate-y-1">
         <CardHeader>
-          <CardTitle>Token Transactions</CardTitle>
+          <CardTitle>Platform Token Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

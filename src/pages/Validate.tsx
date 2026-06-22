@@ -77,37 +77,56 @@ function ProposalCard({
   proposalId,
   voteMutation,
   handleVote,
+  activeAction,
 }: {
   proposal: Proposal & { proposalId?: string | number; price?: string | number; reportId?: { price?: string | number } };
   proposalId: string | number;
   voteMutation: ReturnType<typeof useVoteProposal>;
   handleVote: (proposalId: string | number, vote: number) => void;
+  activeAction: { id: string | number; vote: number } | null;
 }) {
   return (
-    <Card className="p-6">
+    <Card className="p-6 border-border/50 bg-card/90 transition-all hover:shadow-[0_0_15px_rgba(0,255,255,0.1)] hover:-translate-y-1">
       <div className="flex items-start gap-4 mb-4">
         <Avatar>
           <AvatarFallback>
-            {p.author
+            {typeof p?.author === "string" && p.author.length > 0
               ? p.author
                   .split(" ")
-                  .map((n) => n[0])
+                  .map((n: string) => n[0])
                   .join("")
               : "P"}
           </AvatarFallback>
         </Avatar>
 
         <div className="flex-1">
-          <h2 className="text-xl font-semibold">{p.title}</h2>
-          {(p.price || p.reportId?.price) && (
+          <h2 className="text-xl font-semibold">{p?.reportId?.title || p?.title || "Unknown Title"}</h2>
+          {(p?.price || p?.reportId?.price) && (
             <div className="text-sm font-semibold text-primary mt-1">
-              Price: {p.price || p.reportId?.price} $FANSTOKEN
+              Price: {p?.price || p?.reportId?.price} $FANSTOKEN
             </div>
           )}
-          <p className="text-sm text-muted-foreground mt-1">{p.description}</p>
+          <p className="text-sm text-muted-foreground mt-1">{p?.description}</p>
+
+          {typeof p?.reportId?.fileIpfsHash === "string" && (() => {
+            const cleanHash = p.reportId.fileIpfsHash.replace("ipfs://", "");
+            return (
+              <div className="mt-4 p-4 border border-border/50 rounded-lg bg-background/50 flex flex-col items-center justify-center gap-2">
+                <p className="text-sm font-medium text-muted-foreground">Document attached via IPFS</p>
+                <a 
+                  href={`https://ipfs.io/ipfs/${cleanHash}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+                >
+                  View Full Document ↗
+                </a>
+              </div>
+            );
+          })()}
 
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant="secondary">{p.status}</Badge>
+            <Badge variant="secondary">{p?.status}</Badge>
           </div>
         </div>
       </div>
@@ -115,18 +134,18 @@ function ProposalCard({
       <div className="flex items-center gap-6 text-sm mt-4 mb-4 text-muted-foreground">
         <div className="flex items-center gap-1">
           <TrendingUp className="h-4 w-4 text-green-500" />
-          Yes: {p.votesFor || 0}
+          Yes (Voters): {p?.votesFor || 0}
         </div>
 
         <div className="flex items-center gap-1">
           <TrendingDown className="h-4 w-4 text-red-500" />
-          No: {p.votesAgainst || 0}
+          No (Voters): {p?.votesAgainst || 0}
         </div>
       </div>
 
       <ProposalOnChainData proposalId={proposalId} />
 
-      {(p.status === "Active" || p.status === "Pending") && (
+      {(p?.status === "Active" || p?.status === "active") && (
         <div className="flex gap-2 mt-4">
           <Button
             variant="outline"
@@ -134,7 +153,7 @@ function ProposalCard({
             disabled={voteMutation.isPending}
             onClick={() => handleVote(proposalId, 0)}
           >
-            Reject
+            {voteMutation.isPending && activeAction?.id === proposalId && activeAction?.vote === 0 ? "Processing..." : "Reject"}
           </Button>
 
           <Button
@@ -142,7 +161,7 @@ function ProposalCard({
             disabled={voteMutation.isPending}
             onClick={() => handleVote(proposalId, 1)}
           >
-            Approve
+            {voteMutation.isPending && activeAction?.id === proposalId && activeAction?.vote === 1 ? "Processing..." : "Approve"}
           </Button>
         </div>
       )}
@@ -157,11 +176,14 @@ export default function Validate() {
   const voteMutation = useVoteProposal();
 
   const [error, setError] = useState("");
+  const [activeAction, setActiveAction] = useState<{ id: string | number; vote: number } | null>(null);
 
   // Handle both response structure and direct array
-  const proposals = Array.isArray(proposalsResponse)
+  const rawProposals = Array.isArray(proposalsResponse)
     ? proposalsResponse
     : proposalsResponse?.data || [];
+
+  const proposals = rawProposals.filter((p: any) => p?.status === "Active" || p?.status === "active");
 
   const handleVote = (proposalId: string | number, vote: number) => {
     console.log("Voting on proposal:", { proposalId, vote });
@@ -177,15 +199,19 @@ export default function Validate() {
     }
 
     console.log("Voting on proposal:", { proposalId, vote });
+    
+    setActiveAction({ id: proposalId, vote });
 
     voteMutation.mutate(
       { proposalId, vote },
       {
         onError: (err) => {
           setError(err.message);
+          setActiveAction(null);
         },
         onSuccess: () => {
           setError("");
+          setActiveAction(null);
         },
       }
     );
@@ -215,9 +241,9 @@ export default function Validate() {
           </p>
         </div>
       ) : (
-        proposals.map((p) => {
-          // Handle both 'id' and 'proposalId' field names
-          const proposalId = p.id ?? p.proposalId;
+        proposals.map((p, index) => {
+          // Handle both 'id' and 'proposalId' field names safely
+          const proposalId = p?._id ?? p?.id ?? p?.proposalId ?? `fallback-${index}`;
 
           return (
             <ProposalCard
@@ -226,6 +252,7 @@ export default function Validate() {
               proposalId={proposalId}
               voteMutation={voteMutation}
               handleVote={handleVote}
+              activeAction={activeAction}
             />
           );
         })
